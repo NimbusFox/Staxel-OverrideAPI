@@ -1,5 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
+using NimbusFox.FoxCore;
+using NimbusFox.FoxCore.Managers;
+using NimbusFox.OverrideAPI.Patches;
 using Plukit.Base;
+using Staxel;
 using Staxel.Items;
 using Staxel.Logic;
 using Staxel.Modding;
@@ -7,103 +12,75 @@ using Staxel.Tiles;
 
 namespace NimbusFox.OverrideAPI {
     public class OverrideHook : IModHookV3 {
-        public void Dispose() { }
-        public void GameContextInitializeInit() { }
-        public void GameContextInitializeBefore() { }
+        internal static IReadOnlyDictionary<string, string> Tiles => _tiles;
+        internal static IReadOnlyDictionary<string, string> Items => _items;
 
-        private static readonly DirectoryManager ContentRoot = new DirectoryManager();
+        private static Dictionary<string, string> _tiles;
+        private static Dictionary<string, string> _items;
+
+        public OverrideHook() {
+            var fxCore = new Fox_Core("NimbusFox", "OverrideAPI", "0.1");
+
+            fxCore.PatchController.Override(typeof(TileDatabase), "LoadDefinitions", typeof(TileDatabasePatches),
+                nameof(TileDatabasePatches.LoadDefinitionsInit), TileDatabasePatches.LoadDefinitionsTranspiler);
+        }
+
+        internal static void Reload() {
+            _tiles = new Dictionary<string, string>();
+            _items = new Dictionary<string, string>();
+
+            foreach (var file in GameContext.AssetBundleManager.FindByExtension(".tile.override")) {
+                var stream = GameContext.ContentLoader.ReadStream(file);
+
+                var blob = BlobAllocator.Blob(true);
+
+                blob.LoadJsonStream(stream);
+
+                stream.Close();
+
+                stream.Dispose();
+
+                if (blob.Contains("__inherits") && blob.GetString("__inherits").EndsWith(".tile")) {
+                    _tiles.Add(blob.GetString("__inherits"), file);
+                }
+
+                Blob.Deallocate(ref blob);
+            }
+
+            foreach (var file in GameContext.AssetBundleManager.FindByExtension(".item.override")) {
+                var stream = GameContext.ContentLoader.ReadStream(file);
+
+                var blob = BlobAllocator.Blob(true);
+
+                blob.LoadJsonStream(stream);
+
+                stream.Close();
+
+                stream.Dispose();
+
+                if (blob.Contains("__inherits") && blob.GetString("__inherits").EndsWith(".item")) {
+                    _items.Add(blob.GetString("__inherits"), file);
+                }
+
+                Blob.Deallocate(ref blob);
+            }
+        }
+
+        public void Dispose() { }
+
+        public void GameContextInitializeInit() {
+        }
+
+        public void GameContextInitializeBefore() {
+        }
 
         public void GameContextInitializeAfter() {
-            var dir = ContentRoot.FetchDirectory("mods");
-
-            foreach (var folder in dir.Directories) {
-                CycleDirs(dir.FetchDirectory(folder));
-            }
-        }
-
-        private void CycleDirs(DirectoryManager currentDir) {
-            foreach (var dir in currentDir.Directories) {
-                CycleDirs(currentDir.FetchDirectory(dir));
-            }
-
-            CycleFiles(currentDir);
-        }
-
-        private static void CycleFiles(DirectoryManager currentDir) {
-            foreach (var file in currentDir.Files) {
-                try {
-                    var extension = file.Split('.').Last().ToLower();
-
-                    if (extension != "override") {
-                        continue;
-                    }
-
-                    var wait = true;
-
-                    currentDir.ReadFile<Blob>(file, data => {
-                        if (!data.Contains("target") && !data.Contains("overrides")) {
-                            wait = false;
-                            return;
-                        }
-
-                        if (data.KeyValueIteratable["target"].Kind != BlobEntryKind.String) {
-                            wait = false;
-                            return;
-                        }
-
-                        var target = data.GetString("target").Split('.').Last().ToLower();
-
-                        if (target == "item") {
-                            ProcessItem(data);
-                        }
-
-                        wait = false;
-                    }, true);
-
-                    while (wait) {
-
-                    }
-                } catch (Exception ex) {
-                    Logger.LogException(ex);
-                }
-            }
-        }
-
-        private static void ProcessItem(Blob data) {
-            if (TryGetConfig(data.GetString("target"), out var item)) {
-
-            }
-        }
-
-        private static bool TryGetConfig(string target, out Blob blob) {
-            var current = ContentRoot;
-
-            foreach (var dir in target.Split('/')) {
-                if (current.DirectoryExists(dir)) {
-                    current = current.FetchDirectory(dir);
-                }
-            }
-
-            if (current.FileExists(target.Split('/').Last())) {
-                var wait = true;
-                Blob output = null;
-                current.ReadFile<Blob>(target.Split('/').Last(), data => {
-                    output = data;
-                    wait = false;
-                }, true);
-
-                while (wait) { }
-
-                blob = output;
-                return true;
-            }
-
-            blob = null;
-            return false;
         }
 
         public void GameContextDeinitialize() { }
-        public void GameContextReloadBefore() { }
+
+        public void GameContextReloadBefore() {
+        }
         public void GameContextReloadAfter() { }
         public void UniverseUpdateBefore(Universe universe, Timestep step) { }
         public void UniverseUpdateAfter() { }

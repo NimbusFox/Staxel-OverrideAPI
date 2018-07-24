@@ -9,8 +9,9 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>NimbusFox.OverrideAPI</RootNamespace>
     <AssemblyName>NimbusFox.OverrideAPI</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -42,6 +43,7 @@
     </Reference>
     <Reference Include="Staxel.Auth">
       <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Staxel\bin\Staxel.Auth.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -53,10 +55,22 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DirectoryManager.cs" />
-    <Compile Include="Extensions.cs" />
     <Compile Include="OverrideHook.cs" />
+    <Compile Include="Patches\TileDatabasePatches.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Staxel-FoxCore\NimbusFox.FoxCore\NimbusFox.FoxCore.csproj">
+      <Project>{8b473a82-8c34-44ea-b13d-39d0418e021f}</Project>
+      <Name>NimbusFox.FoxCore</Name>
+      <Private>False</Private>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PreBuildEvent>del $(TargetDir)\*.mod</PreBuildEvent>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PostBuildEvent>echo {}  &gt; $(TargetDir)$(TargetName).mod</PostBuildEvent>
+  </PropertyGroup>
 </Project>
