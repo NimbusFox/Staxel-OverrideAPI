@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Reflection.Emit;
-using System.Text;
-using System.Threading.Tasks;
 using NimbusFox.FoxCore.Classes;
 using NimbusFox.FoxCore.Dependencies.Harmony;
 using NimbusFox.FoxCore.Dependencies.Harmony.ILCopying;

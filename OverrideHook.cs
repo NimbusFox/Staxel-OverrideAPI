@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using NimbusFox.FoxCore;
-using NimbusFox.FoxCore.Managers;
 using NimbusFox.OverrideAPI.Patches;
 using Plukit.Base;
 using Staxel;
